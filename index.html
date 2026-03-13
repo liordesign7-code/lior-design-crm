@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ליאור דיזיין - השארת פרטים</title>
+
+<style>
+body{
+font-family: Arial;
+background:#f5f5f5;
+text-align:center;
+padding:40px;
+}
+
+.box{
+background:white;
+padding:30px;
+border-radius:10px;
+max-width:400px;
+margin:auto;
+box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+
+input,select,button{
+width:100%;
+padding:12px;
+margin:8px 0;
+border-radius:6px;
+border:1px solid #ccc;
+font-size:16px;
+}
+
+button{
+background:#25D366;
+color:white;
+border:none;
+font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+
+<h2>השאירו פרטים</h2>
+
+<input id="name" placeholder="שם מלא">
+
+<input id="phone" placeholder="טלפון">
+
+<select id="product">
+<option>טפט לדלת</option>
+<option>חיפוי קירות</option>
+<option>פרקטים</option>
+<option>טפט לארונות מטבח</option>
+<option>מדבקות לזכוכית</option>
+</select>
+
+<button onclick="send()">שליחה לוואטסאפ</button>
+
+</div>
+
+<script>
+function send(){
+
+let name=document.getElementById("name").value
+let phone=document.getElementById("phone").value
+let product=document.getElementById("product").value
+
+let message="ליד חדש%0Aשם: "+name+"%0Aטלפון: "+phone+"%0Aמוצר: "+product
+
+window.open("https://wa.me/972547176649?text="+message)
+
+}
+</script>
+
+</body>
+</html>
