@@ -1,98 +1,13 @@
-<!DOCTYPE html>
-<html lang="he">
-<head>
-<meta charset="UTF-8">
-<title>טופס ליד - ליאור דיזיין</title>
-<style>
-body{
-font-family:Arial;
-background:#f5f5f5;
-display:flex;
-justify-content:center;
-align-items:center;
-height:100vh;
+{
+  "name": "lior-design-crm",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "body-parser": "^1.20.2"
+  }
 }
-
-.box{
-background:white;
-padding:30px;
-border-radius:10px;
-width:320px;
-box-shadow:0 0 10px rgba(0,0,0,0.1);
-}
-
-input,select{
-width:100%;
-padding:10px;
-margin-top:10px;
-}
-
-button{
-width:100%;
-padding:12px;
-margin-top:15px;
-background:#28a745;
-color:white;
-border:none;
-font-size:16px;
-cursor:pointer;
-}
-</style>
-</head>
-
-<body>
-
-<div class="box">
-
-<h2>השאירו פרטים</h2>
-
-<input id="name" placeholder="שם מלא">
-
-<input id="phone" placeholder="טלפון">
-
-<select id="product">
-<option>טפט לדלת</option>
-<option>חיפוי קירות</option>
-<option>פרקטים</option>
-<option>טפט לארונות מטבח</option>
-<option>מדבקות לזכוכית</option>
-</select>
-
-<button onclick="sendLead()">שליחה לוואטסאפ</button>
-
-</div>
-
-<script>
-
-function sendLead(){
-
-const name = document.getElementById("name").value;
-const phone = document.getElementById("phone").value;
-const product = document.getElementById("product").value;
-
-fetch("https://lior-design-crm-api.onrender.com/api/leads",{
-method:"POST",
-headers:{
-"Content-Type":"application/json"
-},
-body:JSON.stringify({
-name:name,
-phone:phone,
-product:product
-})
-})
-.then(res=>res.json())
-.then(data=>{
-alert("הליד נשמר במערכת בהצלחה");
-})
-.catch(err=>{
-alert("שגיאה בשליחת הליד");
-console.log(err);
-});
-
-}
-
-</script>
-
-</body>
-</html>
