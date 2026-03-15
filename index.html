@@ -4,7 +4,7 @@ function sendLead() {
   const phone = document.getElementById("phone").value;
   const product = document.getElementById("product").value;
 
-  fetch("https://lior-design-crm-api.onrender.com/api/leads", {
+  fetch("https://lior-design-crm-api.onrender.com/api/leads", { 
     method: "POST",
     headers: {
       "Content-Type": "application/json"
