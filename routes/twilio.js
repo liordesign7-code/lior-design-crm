@@ -19,10 +19,7 @@ const WEEKDAY_HOURS = {
   5: { start: 8, end: 12 },
 };
 
-const HOLIDAY_EVES = [
-  '2026-04-01','2026-04-08','2026-05-21',
-  '2026-09-21','2026-09-29','2026-10-06','2026-10-13',
-];
+const HOLIDAY_EVES = ['2026-04-01','2026-04-08','2026-05-21','2026-09-21','2026-09-29','2026-10-06','2026-10-13'];
 
 function getNow() {
   return new Date(new Date().toLocaleString('en-US', { timeZone: TIMEZONE }));
@@ -56,8 +53,7 @@ function normalizePhone(num) {
 }
 
 function toE164(num) {
-  const n = normalizePhone(num);
-  return '+972' + n.replace(/^0/, '');
+  return '+972' + normalizePhone(num).replace(/^0/, '');
 }
 
 const DEFAULT_MESSAGES = {
@@ -71,20 +67,14 @@ function getMsg(key) {
   try {
     const msgs = db.getMessages();
     return (msgs && msgs[key]) || DEFAULT_MESSAGES[key] || '';
-  } catch(e) {
-    return DEFAULT_MESSAGES[key] || '';
-  }
+  } catch(e) { return DEFAULT_MESSAGES[key] || ''; }
 }
 
 async function sendMsg(toNumber, text) {
   const client = twilio(ACCOUNT_SID, AUTH_TOKEN);
   const to = toE164(toNumber);
   try {
-    await client.messages.create({
-      from: 'whatsapp:' + toE164(WA_FROM),
-      to: 'whatsapp:' + to,
-      body: text,
-    });
+    await client.messages.create({ from: 'whatsapp:' + toE164(WA_FROM), to: 'whatsapp:' + to, body: text });
     return 'whatsapp';
   } catch(e) {
     await client.messages.create({ from: FROM_NUMBER, to, body: text });
@@ -93,18 +83,11 @@ async function sendMsg(toNumber, text) {
 }
 
 function getOrCreateLead(phone, source) {
-  const leads = db.getLeads();
   const clean = normalizePhone(phone);
+  const leads = db.getLeads();
   let lead = leads.find(l => normalizePhone(l.phone) === clean);
   if (!lead) {
-    lead = db.addLead({
-      name: 'לקוח מהחטאת שיחה',
-      phone: clean,
-      source,
-      status: 'new',
-      waitingForName: true,
-      missedCallAt: Date.now(),
-    });
+    lead = db.addLead({ name: 'לקוח מהחטאת שיחה', phone: clean, source, status: 'new', waitingForName: true, missedCallAt: Date.now() });
   }
   return lead;
 }
@@ -114,28 +97,18 @@ router.post('/missed-call', async (req, res) => {
   res.send('<Response></Response>');
   const status = req.body.CallStatus || '';
   const fromRaw = req.body.From || '';
-  const isMissed = ['no-answer','busy','failed','canceled'].includes(status);
-  if (!isMissed || !fromRaw) return;
+  if (!['no-answer','busy','failed','canceled'].includes(status) || !fromRaw) return;
   const phone = normalizePhone(fromRaw);
   const lead = getOrCreateLead(phone, 'טלפון');
   db.updateLead(lead.id, { missedCallAt: Date.now(), waitingForName: true });
   db.addLog(lead.id, '📞 שיחה שלא נענתה – ' + getNow().toLocaleTimeString('he-IL'));
   if (!isBusinessHours()) {
     const next = nextBusinessTime();
-    if (next) {
-      setTimeout(async () => {
-        try {
-          await sendMsg(phone, getMsg('missed1'));
-          db.addLog(lead.id, '💬 הודעה ראשונה נשלחה (תזמון)');
-          scheduleFollowups(lead.id, phone);
-        } catch(e) {}
-      }, next.getTime() - Date.now());
-    }
+    if (next) setTimeout(async () => { try { await sendMsg(phone, getMsg('missed1')); scheduleFollowups(lead.id, phone); } catch(e){} }, next.getTime() - Date.now());
     return;
   }
   try {
-    const channel = await sendMsg(phone, getMsg('missed1'));
-    db.addLog(lead.id, '💬 הודעה ראשונה נשלחה ב' + (channel === 'whatsapp' ? 'WhatsApp' : 'SMS'));
+    await sendMsg(phone, getMsg('missed1'));
     scheduleFollowups(lead.id, phone);
   } catch(e) {}
 });
@@ -155,13 +128,8 @@ function scheduleFollowups(leadId, phone) {
       const l = db.getLeads().find(x => x.id === leadId);
       if (!l) return;
       await sendMsg(phone, getMsg('followup30'));
-      db.addLog(leadId, '💬 הודעת המתנה נשלחה');
       const callTime = new Date(l.missedCallAt || Date.now()).toLocaleTimeString('he-IL', {hour:'2-digit',minute:'2-digit'});
-      db.addAlert({
-        type: 'missed_call', leadId, phone,
-        message: 'אולגה, לקוח (' + phone + ') חיפש אותך בשעה ' + callTime + '.\nנשלחה הודעה אוטומטית אבל עדיין לא חזרת אליו.',
-        ts: Date.now(), read: false,
-      });
+      db.addAlert({ type: 'missed_call', leadId, phone, message: 'אולגה, לקוח (' + phone + ') חיפש אותך בשעה ' + callTime + '.\nנשלחה הודעה אוטומטית אבל עדיין לא חזרת אליו.', ts: Date.now(), read: false });
       if (OLGA_PHONE) await sendMsg(OLGA_PHONE, '⏰ תזכורת – לקוח מחכה!\n📞 ' + phone + '\n🕐 ' + callTime).catch(()=>{});
     } catch(e) {}
   }, 30 * 60 * 1000);
@@ -174,43 +142,26 @@ router.post('/incoming-wa', async (req, res) => {
   const body = (req.body.Body || '').trim();
   if (!fromRaw || !body) return;
   const phone = normalizePhone(fromRaw);
-  const leads = db.getLeads();
-  const lead = leads.find(l => normalizePhone(l.phone) === phone);
+  const lead = db.getLeads().find(l => normalizePhone(l.phone) === phone);
   if (!lead) {
-    db.addLead({ name: 'ליד מ-WhatsApp', phone, source: 'וואטסאפ', status: 'new', notes: '💬 הודעה ראשונה: "' + body.slice(0,100) + '"' });
-    if (OLGA_PHONE) await sendMsg(OLGA_PHONE, '💬 הודעה נכנסת חדשה!\n📞 ' + phone + '\n"' + body.slice(0,80) + '"').catch(()=>{});
+    db.addLead({ name: 'ליד מ-WhatsApp', phone, source: 'וואטסאפ', status: 'new', notes: '💬 ' + body.slice(0,100) });
+    if (OLGA_PHONE) await sendMsg(OLGA_PHONE, '💬 הודעה חדשה!\n📞 ' + phone + '\n' + body.slice(0,80)).catch(()=>{});
     return;
   }
-  if (lead.waitingForName) {
-    const isName = body.length <= 30 && !body.includes('http') && !/^\d+$/.test(body);
-    if (isName) {
-      db.updateLead(lead.id, { name: body, waitingForName: false });
-      db.addLog(lead.id, '✅ שם התעדכן: "' + body + '"');
-      await sendMsg(phone, getMsg('gotName').replace('{name}', body)).catch(()=>{});
-      if (OLGA_PHONE) await sendMsg(OLGA_PHONE, '✅ שם התעדכן!\n👤 ' + body + '\n📞 ' + phone).catch(()=>{});
-      return;
-    }
+  if (lead.waitingForName && body.length <= 30 && !body.includes('http') && !/^\d+$/.test(body)) {
+    db.updateLead(lead.id, { name: body, waitingForName: false });
+    db.addLog(lead.id, '✅ שם: ' + body);
+    await sendMsg(phone, getMsg('gotName').replace('{name}', body)).catch(()=>{});
+    if (OLGA_PHONE) await sendMsg(OLGA_PHONE, '✅ שם: ' + body + '\n📞 ' + phone).catch(()=>{});
+    return;
   }
-  db.addLog(lead.id, '💬 הודעה נכנסת: "' + body.slice(0,100) + '"');
-  if (OLGA_PHONE) await sendMsg(OLGA_PHONE, '💬 הודעה מ-' + lead.name + '\n📞 ' + phone + '\n"' + body.slice(0,80) + '"').catch(()=>{});
+  db.addLog(lead.id, '💬 ' + body.slice(0,100));
+  if (OLGA_PHONE) await sendMsg(OLGA_PHONE, '💬 ' + lead.name + '\n📞 ' + phone + '\n' + body.slice(0,80)).catch(()=>{});
 });
 
 router.get('/test', (req, res) => {
   const now = getNow();
-  const days = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
-  res.json({
-    ok: true,
-    isBusinessHours: isBusinessHours(),
-    time: now.toLocaleTimeString('he-IL'),
-    day: days[now.getDay()],
-    config: {
-      hasAccountSid: !!ACCOUNT_SID,
-      hasAuthToken: !!AUTH_TOKEN,
-      hasFromNumber: !!FROM_NUMBER,
-      hasWaFrom: !!WA_FROM,
-      hasOlgaPhone: !!OLGA_PHONE,
-    }
-  });
+  res.json({ ok: true, isBusinessHours: isBusinessHours(), time: now.toLocaleTimeString('he-IL'), day: ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'][now.getDay()], config: { hasAccountSid: !!ACCOUNT_SID, hasAuthToken: !!AUTH_TOKEN, hasFromNumber: !!FROM_NUMBER, hasWaFrom: !!WA_FROM, hasOlgaPhone: !!OLGA_PHONE } });
 });
 
-module.exports = router; 
+module.exports = router;
