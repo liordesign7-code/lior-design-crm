@@ -11,7 +11,10 @@ router.post('/incoming-wa', (req, res) => {
   res.set('Content-Type', 'text/xml');
   res.send('<Response></Response>');
 
-  const from = req.body?.From || '';
-  const body = req.body?.Body || '';
+  const from = (req.body && req.body.From) ? req.body.From : '';
+  const body = (req.body && req.body.Body) ? req.body.Body : '';
 
-  console.log('📩
+  console.log('Incoming message:', from, body);
+});
+
+module.exports = router;
