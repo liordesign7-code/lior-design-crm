@@ -1,11 +1,9 @@
-function safeFindLeadById(leadId) {
-  const leads = db.getLeads() || [];
-  const arr = Array.isArray(leads) ? leads : Object.values(leads);
-  return arr.find(x => x.id === leadId);
-}
+const express = require('express');
+const router = express.Router();
 
-function safeFindLeadByPhone(phone) {
-  const leads = db.getLeads() || [];
-  const arr = Array.isArray(leads) ? leads : Object.values(leads);
-  return arr.find(l => normalizePhone(l.phone) === phone);
-}
+// בדיקה שהשרת עובד
+router.get('/test', (req, res) => {
+  res.json({ ok: true, msg: 'twilio route works' });
+});
+
+module.exports = router;
