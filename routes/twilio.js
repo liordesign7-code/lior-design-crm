@@ -14,7 +14,7 @@ const WEEKDAY_HOURS = {
   0: { start: 8, end: 19 },
   1: { start: 8, end: 19 },
   2: { start: 8, end: 19 },
-  3: { start: 8, end: 19 },
+  3: { start: 8, end: 19 }, 
   4: { start: 8, end: 19 },
   5: { start: 8, end: 12 },
 };
