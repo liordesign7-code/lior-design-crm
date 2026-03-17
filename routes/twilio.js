@@ -164,4 +164,4 @@ router.get('/test', (req, res) => {
   res.json({ ok: true, isBusinessHours: isBusinessHours(), time: now.toLocaleTimeString('he-IL'), day: ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'][now.getDay()], config: { hasAccountSid: !!ACCOUNT_SID, hasAuthToken: !!AUTH_TOKEN, hasFromNumber: !!FROM_NUMBER, hasWaFrom: !!WA_FROM, hasOlgaPhone: !!OLGA_PHONE } });
 });
 
-module.exports = router;
+module.exports = router; 
