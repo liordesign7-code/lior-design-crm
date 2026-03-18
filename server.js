@@ -47,4 +47,7 @@ app.post('/twilio/incoming-wa', async (req, res) => {
       createdAt: new Date()
     });
 
-    console
+    
+console.log('Saved to Firebase:', Body);
+
+res.send('<Response></Response>');
