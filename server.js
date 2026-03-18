@@ -40,3 +40,16 @@ app.get('/health', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
+app.get('/leads', async (req, res) => {
+  try {
+    const snapshot = await db.collection('leads').orderBy('createdAt', 'desc').get();
+    const leads = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    res.json({ ok: true, leads });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
