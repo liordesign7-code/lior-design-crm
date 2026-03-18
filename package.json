@@ -1,19 +1,58 @@
-{
-  "name": "lior-design-crm-server",
-  "version": "1.0.0",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "body-parser": "^1.20.2",
-    "dotenv": "^16.4.1",
-    "twilio": "4.x",
-    "mongoose": "7.x"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  }
+const express = require('express');
+const router = express.Router();
+const admin = require('firebase-admin');
+const fs = require('fs');
+
+// 🔥 טעינת Firebase מה־secret file
+let serviceAccount;
+
+try {
+  serviceAccount = JSON.parse(
+    fs.readFileSync('/etc/secrets/firebase.json', 'utf8')
+  );
+} catch (err) {
+  console.error('❌ Failed to load firebase.json', err);
 }
+
+// 🔥 אתחול Firebase (רק פעם אחת)
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
+}
+
+const db = admin.firestore();
+
+// ✅ בדיקת חיבור
+router.get('/test', (req, res) => {
+  res.json({ ok: true, msg: 'twilio route works' });
+});
+
+// 📩 קבלת הודעות מוואטסאפ
+router.post('/incoming-wa', async (req, res) => {
+  try {
+    const from = req.body?.From || '';
+    const body = req.body?.Body || '';
+
+    console.log('📩 Incoming:', from, body);
+
+    // 🔥 שמירה ב-Firebase
+    await db.collection('leads').add({
+      phone: from,
+      message: body,
+      createdAt: new Date()
+    });
+
+    console.log('✅ Saved to Firebase');
+
+    // תשובה ל-Twilio
+    res.set('Content-Type', 'text/xml');
+    res.send('<Response></Response>');
+
+  } catch (error) {
+    console.error('❌ Firebase error:', error);
+    res.status(500).send('Error');
+  }
+});
+
+module.exports = router;
