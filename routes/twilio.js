@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const admin = require("firebase-admin");
 
-// 🔥 טעינת Firebase (תקין)
+// טעינת Firebase בצורה יציבה
 const serviceAccount = require("/etc/secrets/firebase.json");
 
 if (!admin.apps.length) {
@@ -13,39 +13,40 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-// ✅ בדיקה
+// בדיקה
 router.get('/test', (req, res) => {
-  res.json({ ok: true, msg: 'twilio route works' });
+  return res.json({ ok: true, msg: 'twilio route works' });
 });
 
-// 📩 קבלת הודעות וואטסאפ
+// קבלת הודעות וואטסאפ
 router.post('/incoming-wa', async (req, res) => {
   try {
     const from = req.body?.From || '';
     const body = req.body?.Body || '';
 
-    console.log("📩 Incoming:", from, body);
+    console.log("Incoming:", from, body);
 
-    // אם אין נתונים - לא קורסים
     if (!from || !body) {
-      console.log("❌ Missing data");
+      console.log("Missing data");
       res.set('Content-Type', 'text/xml');
       return res.send('<Response></Response>');
     }
 
-    // 🔥 שמירה ל-Firebase
     const doc = await db.collection("leads").add({
       phone: from,
       message: body,
       createdAt: new Date()
     });
 
-    console.log("✅ Saved to Firebase:", doc.id);
+    console.log("Saved to Firebase:", doc.id);
 
-    // תשובה ל-Twilio
     res.set('Content-Type', 'text/xml');
-    res.send('<Response></Response>');
+    return res.send('<Response></Response>');
 
   } catch (error) {
-    console.error("❌ Firebase error:", error.message);
-    res.status(500).
+    console.error("Firebase error:", error.message);
+    return res.status(500).send("Error");
+  }
+});
+
+module.exports = router;
