@@ -1,14 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const admin = require("firebase-admin");
-const fs = require("fs");
 
-// 🔥 טעינת Firebase
-const serviceAccount = JSON.parse(
-  fs.readFileSync("/etc/secrets/firebase.json", "utf8")
-);
+// 🔥 טעינת Firebase (תקין)
+const serviceAccount = require("/etc/secrets/firebase.json");
 
-// אתחול Firebase
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
@@ -30,11 +26,14 @@ router.post('/incoming-wa', async (req, res) => {
 
     console.log("📩 Incoming:", from, body);
 
+    // אם אין נתונים - לא קורסים
     if (!from || !body) {
       console.log("❌ Missing data");
+      res.set('Content-Type', 'text/xml');
       return res.send('<Response></Response>');
     }
 
+    // 🔥 שמירה ל-Firebase
     const doc = await db.collection("leads").add({
       phone: from,
       message: body,
@@ -43,13 +42,10 @@ router.post('/incoming-wa', async (req, res) => {
 
     console.log("✅ Saved to Firebase:", doc.id);
 
+    // תשובה ל-Twilio
     res.set('Content-Type', 'text/xml');
     res.send('<Response></Response>');
 
   } catch (error) {
     console.error("❌ Firebase error:", error.message);
-    res.status(500).send("Error");
-  }
-});
-
-module.exports = router;
+    res.status(500).
