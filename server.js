@@ -1,5 +1,13 @@
+require('dotenv').config();
+
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const path = require('path');
+
 const admin = require('firebase-admin');
 
+// 🔐 חיבור ל־Firebase מה־Secret File
 const serviceAccount = require('/etc/secrets/firebase.json');
 
 admin.initializeApp({
@@ -7,58 +15,36 @@ admin.initializeApp({
 });
 
 const db = admin.firestore();
-require('dotenv').config();
-const express    = require('express');
-const cors       = require('cors');
-const bodyParser = require('body-parser');
-const path       = require('path');
 
-const db            = require('./database');
-const leadsRouter   = require('./routes/leads');
-const webhookRouter = require('./routes/webhook');
-const twilioRouter  = require('./routes/twilio');
-
-const app  = express();
+const app = express();
 const PORT = process.env.PORT || 3000;
-const PASS = process.env.CRM_PASSWORD || 'lhlh19841984';
+const PASS = process.env.CRM_PASSWORD || '1234';
 
+// middlewares
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
 
+// לוגים
 app.use((req, res, next) => {
-  console.log(`[${new Date().toLocaleTimeString('he-IL')}] ${req.method} ${req.path}`);
+  console.log(`[${new Date().toLocaleString('he-IL')}] ${req.method} ${req.url}`);
   next();
 });
 
-function auth(req, res, next) {
-  const key = req.headers['x-crm-key'] || req.query.key;
-  if (key !== PASS) return res.status(401).json({ ok: false, error: 'לא מורשה' });
-  next();
-}
-
-app.use('/api/leads',   auth, leadsRouter);
-app.use('/webhook',     webhookRouter);
-app.use('/twilio',      twilioRouter);
-
-app.get('/health', (req, res) => {
-  res.json({ ok: true });
+// בדיקת שרת
+app.get('/twilio/test', (req, res) => {
+  res.json({ ok: true, msg: 'twilio route works' });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
-});
-app.get('/leads', async (req, res) => {
+// קבלת הודעה מוואטסאפ
+app.post('/twilio/incoming-wa', async (req, res) => {
   try {
-    const snapshot = await db.collection('leads').orderBy('createdAt', 'desc').get();
-    const leads = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    const { Body, From } = req.body;
 
-    res.json({ ok: true, leads });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e.message });
-  }
-});
+    await db.collection('leads').add({
+      message: Body,
+      phone: From,
+      createdAt: new Date()
+    });
+
+    console
