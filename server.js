@@ -3,10 +3,9 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-
 const admin = require('firebase-admin');
 
-// 🔐 Firebase (מה־Secret File)
+// Firebase
 const serviceAccount = require('/etc/secrets/firebase.json');
 
 admin.initializeApp({
@@ -23,31 +22,34 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// לוגים
-app.use((req, res, next) => {
-  console.log(`[${new Date().toLocaleString('he-IL')}] ${req.method} ${req.url}`);
-  next();
-});
-
 // בדיקה
-app.get('/twilio/test', (req, res) => {
-  res.json({ ok: true, msg: 'twilio route works' });
+app.get('/twilio-test', (req, res) => {
+  res.json({ ok: true });
 });
 
-// קבלת הודעה מוואטסאפ
+// קבלת הודעת וואטסאפ
 app.post('/twilio/incoming-wa', async (req, res) => {
   try {
-    const { Body, From } = req.body;
+    console.log('RAW:', req.body);
+
+    const message = req.body.Body;
+    const phone = req.body.From;
+
+    if (!message || !phone) {
+      return res.status(400).send('Missing data');
+    }
 
     await db.collection('leads').add({
-      message: Body,
-      phone: From,
+      message,
+      phone,
       createdAt: new Date()
     });
 
-    console.log('Saved to Firebase:', Body);
+    console.log('Saved:', message, phone);
 
+    res.set('Content-Type', 'text/xml');
     res.send('<Response></Response>');
+
   } catch (err) {
     console.error(err);
     res.status(500).send('error');
@@ -68,12 +70,12 @@ app.get('/leads', async (req, res) => {
     }));
 
     res.json({ ok: true, leads });
+
   } catch (e) {
-    res.status(500).json({ ok: false, error: e.message });
+    res.status(500).json({ ok: false });
   }
 });
 
-// הפעלת שרת
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
+app.listen(PORT, () => {
+  console.log('Server running on port ' + PORT);
 });
