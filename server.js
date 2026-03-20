@@ -1,79 +1,51 @@
 require('dotenv').config();
-
 const express = require('express');
 const cors = require('cors');
-const bodyParser = require('body-parser');
-const admin = require('firebase-admin');
-
-// Firebase
-const serviceAccount = require('/etc/secrets/firebase.json');
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
-
-const db = admin.firestore();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// middlewares
 app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// בדיקה
-app.get('/twilio-test', (req, res) => {
+let leads = [];
+
+// בדיקה שהשרת עובד
+app.get('/', (req, res) => {
+  res.send('API is working 🚀');
+});
+
+// GET כל הלידים
+app.get('/leads', (req, res) => {
+  res.json({ ok: true, leads });
+});
+
+// POST ליד חדש
+app.post('/leads', (req, res) => {
+  const lead = {
+    id: Date.now().toString(36) + Math.random().toString(36).substring(2),
+    phone: req.body.phone || '',
+    name: req.body.name || '',
+    message: req.body.message || req.body.Body || '',
+    createdAt: new Date()
+  };
+
+  if (lead.phone) {
+    leads.unshift(lead);
+  }
+
+  res.json({ ok: true, lead });
+});
+
+// בדיקת בריאות
+app.get('/health', (req, res) => {
   res.json({ ok: true });
 });
 
-// קבלת הודעת וואטסאפ
-app.post('/twilio/incoming-wa', async (req, res) => {
-  try {
-    console.log('RAW:', req.body);
-
-    const message = req.body.Body;
-    const phone = req.body.From;
-
-    if (!message || !phone) {
-      return res.status(400).send('Missing data');
-    }
-
-    await db.collection('leads').add({
-      message,
-      phone,
-      createdAt: new Date()
-    });
-
-    console.log('Saved:', message, phone);
-
-    res.set('Content-Type', 'text/xml');
-    res.send('<Response></Response>');
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('error');
-  }
-});
-
-// שליפת לידים
-app.get('/leads', async (req, res) => {
-  try {
-    const snapshot = await db
-      .collection('leads')
-      .orderBy('createdAt', 'desc')
-      .get();
-
-    const leads = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-
-    res.json({ ok: true, leads });
-
-  } catch (e) {
-    res.status(500).json({ ok: false });
-  }
+// אם אין נתיב
+app.use((req, res) => {
+  res.status(404).json({ ok: false, message: 'Not Found' });
 });
 
 app.listen(PORT, () => {
