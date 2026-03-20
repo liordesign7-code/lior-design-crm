@@ -1,57 +1,61 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const bodyParser = require('body-parser');
+const path = require('path');
+const db = require('./database');
+const twilioRouter = require('./routes/twilio');
+const webhookRouter = require('./routes/webhook');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const PASS = process.env.CRM_PASSWORD || 'lhlh19841984';
 
-// Middlewares
 app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({ extended: true }));
 
-// זיכרון זמני ללידים
-let leads = [];
+function auth(req, res, next) {
+  const key = req.headers['x-crm-key'] || req.query.key;
+  if (key !== PASS) return res.status(401).json({ ok: false, error: 'לא מורשה' });
+  next();
+}
 
-// בדיקה
-app.get('/', (req, res) => {
-  res.send('API is working 🚀');
-});
+app.use('/twilio', twilioRouter);
+app.use('/webhook', webhookRouter);
 
-// קבלת ליד מהאתר
-app.post('/leads', (req, res) => {
+app.get('/leads', auth, async (req, res) => {
   try {
-    const { phone, name } = req.body;
-
-    if (!phone || !name) {
-      return res.status(400).json({ error: 'Missing data' });
-    }
-
-    const newLead = {
-      id: Date.now(),
-      phone,
-      name,
-      createdAt: new Date()
-    };
-
-    leads.push(newLead);
-
-    console.log('New lead:', newLead);
-
-    res.json({ success: true, lead: newLead });
-
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ error: 'Server error' });
+    const leads = await db.getLeads();
+    res.json({ ok: true, leads: leads || [] });
+  } catch(e) {
+    res.json({ ok: true, leads: [] });
   }
 });
 
-// שליפת לידים (לא חובה אבל טוב לבדיקה)
-app.get('/leads', (req, res) => {
-  res.json(leads);
+app.post('/leads', async (req, res) => {
+  try {
+    const lead = await db.addLead({
+      name: req.body.fullName || req.body.name || 'לקוח חדש',
+      phone: req.body.phone || '',
+      message: req.body.message || '',
+      source: req.body.source || 'אתר',
+      status: 'new',
+    });
+    res.json({ ok: true, lead });
+  } catch(e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
-// הפעלת שרת
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.get('/health', (req, res) => {
+  res.json({ ok: true, server: 'Lior Design CRM', uptime: Math.floor(process.uptime()) });
+});
+
+app.use((req, res) => {
+  res.status(404).json({ ok: false, error: 'Not found' });
+});
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log('Server running on port ' + PORT);
 });
