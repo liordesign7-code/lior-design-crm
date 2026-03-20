@@ -11,7 +11,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const PASS = process.env.CRM_PASSWORD || 'lhlh19841984';
 
-app.use(cors());
+app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
