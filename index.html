@@ -2,39 +2,80 @@
 <html lang="he">
 <head>
   <meta charset="UTF-8">
-  <title>בדיקת לידים</title>
+  <title>CRM לידים</title>
 </head>
 
-<body style="font-family: Arial; text-align: center; margin-top: 50px;">
+<body style="font-family:Arial; text-align:center; margin-top:30px; direction:rtl;">
 
-  <h1>🚀 בדיקת מערכת לידים</h1>
+  <h1>📋 מערכת לידים</h1>
 
-  <button onclick="sendTestLead()" style="padding:20px; font-size:20px;">
+  <button onclick="sendTestLead()" style="padding:15px; font-size:18px; margin-bottom:20px;">
     שלח ליד בדיקה
   </button>
 
+  <h2>לידים נכנסים:</h2>
+
+  <div id="leadsList"></div>
+
   <script>
+    // שליחת ליד בדיקה
     function sendTestLead() {
-      fetch("https://lior-design-crm-api.onrender.com/leads", {
+      fetch('https://lior-design-crm-api.onrender.com/leads', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           phone: '0520000000',
-          name: 'בדיקה אמיתית'
+          name: 'לקוח חדש'
         })
       })
       .then(res => res.json())
       .then(data => {
-        alert(JSON.stringify(data));
-        console.log(data);
+        alert('נשלח בהצלחה 🔥');
+        loadLeads();
       })
       .catch(err => {
-        alert('ERROR ❌');
+        alert('שגיאה ❌');
         console.log(err);
       });
     }
+
+    // טעינת לידים מהשרת
+    async function loadLeads() {
+      try {
+        const res = await fetch('https://lior-design-crm-api.onrender.com/leads');
+        const leads = await res.json();
+
+        const container = document.getElementById('leadsList');
+        container.innerHTML = '';
+
+        leads.reverse().forEach(lead => {
+          const div = document.createElement('div');
+          div.style.border = '1px solid #ccc';
+          div.style.margin = '10px';
+          div.style.padding = '10px';
+          div.style.borderRadius = '8px';
+
+          div.innerHTML = `
+            <strong>${lead.name}</strong><br>
+            📞 ${lead.phone}<br>
+            🕒 ${new Date(lead.createdAt).toLocaleString()}
+          `;
+
+          container.appendChild(div);
+        });
+
+      } catch (err) {
+        console.log('שגיאה בטעינת לידים', err);
+      }
+    }
+
+    // רענון אוטומטי כל 5 שניות
+    setInterval(loadLeads, 5000);
+
+    // טעינה ראשונית
+    loadLeads();
   </script>
 
 </body>
