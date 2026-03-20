@@ -1,40 +1,40 @@
-HTML
 <!DOCTYPE html>
 <html lang="he">
 <head>
   <meta charset="UTF-8">
   <title>בדיקת לידים</title>
 </head>
-<body style="font-family:Arial;text-align:center;margin-top:50px;">
 
-  <h1>בדיקת מערכת לידים 🚀</h1>
+<body style="font-family: Arial; text-align: center; margin-top: 50px;">
 
-  <button onclick="sendTestLead()" style="padding:20px;font-size:20px;">
+  <h1>🚀 בדיקת מערכת לידים</h1>
+
+  <button onclick="sendTestLead()" style="padding:20px; font-size:20px;">
     שלח ליד בדיקה
   </button>
 
   <script>
-  function sendTestLead() {
-    fetch("https://lior-design-crm-api.onrender.com/leads", {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        phone: '0500000000',
-        Name: 'בדיקה מהאתר'
+    function sendTestLead() {
+      fetch("https://lior-design-crm-api.onrender.com/leads", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          phone: '0520000000',
+          name: 'בדיקה אמיתית'
+        })
       })
-    })
-    .then(res => res.json())
-    .then(data => {
-      alert('נשלח בהצלחה 🔥');
-      console.log(data);
-    })
-    .catch(err => {
-      alert('שגיאה 😅');
-      console.log(err);
-    });
-  }
+      .then(res => res.json())
+      .then(data => {
+        alert(JSON.stringify(data));
+        console.log(data);
+      })
+      .catch(err => {
+        alert('ERROR ❌');
+        console.log(err);
+      });
+    }
   </script>
 
 </body>
