@@ -1,75 +1,62 @@
-const fs = require('fs');
-const path = require('path');
-const DB_PATH = path.join(__dirname, 'crm-data.json');
-const MONGO_URI = process.env.MONGODB_URI;
-let mongoose, Lead, isConnected = false;
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const db = require('./database');
+const twilioRouter = require('./routes/twilio');
+const webhookRouter = require('./routes/webhook');
+const leadsRouter = require('./routes/leads');
 
-async function connectMongo() {
-  if (!MONGO_URI) return false;
+const app = express();
+const PORT = process.env.PORT || 3000;
+const PASS = process.env.CRM_PASSWORD || 'lhlh19841984';
+
+app.use(cors({ origin: '*' }));
+app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+function auth(req, res, next) {
+  const key = req.headers['x-crm-key'] || req.query.key;
+  if (key !== PASS) return res.status(401).json({ ok: false, error: 'לא מורשה' });
+  next();
+}
+
+app.use('/twilio', twilioRouter);
+app.use('/webhook', webhookRouter);
+app.use('/api/leads', auth, leadsRouter);
+
+app.get('/leads', auth, async (req, res) => {
   try {
-    mongoose = require('mongoose');
-    if (mongoose.connection.readyState === 1) { isConnected = true; return true; }
-    await mongoose.connect(MONGO_URI);
-    isConnected = true;
-    console.log('[DB] MongoDB מחובר!');
-    const leadSchema = new mongoose.Schema({ id: String, name: String, phone: String, message: String, source: String, status: String, notes: String, waitingForName: Boolean, missedCallAt: Number, createdAt: Number, updatedAt: Number }, { strict: false });
-    Lead = mongoose.models.Lead || mongoose.model('Lead', leadSchema);
-    return true;
+    const leads = await db.getLeads();
+    res.json({ ok: true, leads: leads || [] });
   } catch(e) {
-    console.log('[DB] MongoDB נכשל:', e.message);
-    isConnected = false;
-    return false;
+    res.json({ ok: true, leads: [] });
   }
-}
+});
 
-function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
-function loadJSON() { try { if (fs.existsSync(DB_PATH)) return JSON.parse(fs.readFileSync(DB_PATH,'utf8')); } catch(e){} return {leads:[],messages:{},alerts:[]}; }
-function saveJSON(data) { fs.writeFileSync(DB_PATH, JSON.stringify(data,null,2),'utf8'); }
-
-async function getLeads() {
-  await connectMongo();
-  if (isConnected && Lead) {
-    const leads = await Lead.find().sort({createdAt:-1}).lean();
-    return leads.map(l=>{ const {_id,__v,...r}=l; return r; });
+app.post('/leads', async (req, res) => {
+  try {
+    const lead = await db.addLead({
+      name: req.body.fullName || req.body.name || 'לקוח חדש',
+      phone: req.body.phone || '',
+      message: req.body.message || '',
+      source: req.body.source || 'אתר',
+      status: 'new',
+    });
+    res.json({ ok: true, lead });
+  } catch(e) {
+    res.status(500).json({ ok: false, error: e.message });
   }
-  return loadJSON().leads;
-}
+});
 
-async function addLead(data) {
-  await connectMongo();
-  const now = Date.now();
-  const lead = { id: data.id||uid(), name: data.name||'לקוח חדש', phone: data.phone||'', message: data.message||'', source: data.source||'ידני', status: data.status||'new', notes: data.notes||'', waitingForName: data.waitingForName||false, missedCallAt: data.missedCallAt||null, createdAt: now, updatedAt: now };
-  if (isConnected && Lead) { await Lead.create(lead); }
-  else { const db=loadJSON(); if(!db.leads)db.leads=[]; db.leads.unshift(lead); saveJSON(db); }
-  return lead;
-}
+app.get('/health', (req, res) => {
+  res.json({ ok: true, server: 'Lior Design CRM', uptime: Math.floor(process.uptime()) });
+});
 
-async function updateLead(id, data) {
-  await connectMongo();
-  if (isConnected && Lead) { const u=await Lead.findOneAndUpdate({id},{...data,updatedAt:Date.now()},{new:true}).lean(); if(u){const{_id,__v,...r}=u;return r;} return null; }
-  const db=loadJSON(); const idx=db.leads.findIndex(l=>l.id===id); if(idx===-1)return null; db.leads[idx]={...db.leads[idx],...data,updatedAt:Date.now()}; saveJSON(db); return db.leads[idx];
-}
+app.use((req, res) => {
+  res.status(404).json({ ok: false, error: 'Not found' });
+});
 
-async function addLog(id, action) {
-  await connectMongo();
-  if (isConnected && Lead) { await Lead.findOneAndUpdate({id},{$push:{history:{$each:[{action,ts:Date.now()}],$position:0}}}); return; }
-  const db=loadJSON(); const lead=db.leads.find(l=>l.id===id); if(!lead)return; if(!lead.history)lead.history=[]; lead.history.unshift({action,ts:Date.now()}); saveJSON(db);
-}
-
-async function deleteLead(id) {
-  await connectMongo();
-  if (isConnected && Lead) { await Lead.deleteOne({id}); return; }
-  const db=loadJSON(); db.leads=db.leads.filter(l=>l.id!==id); saveJSON(db);
-}
-
-function getMessages() { return loadJSON().messages||{}; }
-function saveMessages(msgs) { const db=loadJSON(); db.messages=msgs; saveJSON(db); }
-function getAlerts() { return loadJSON().alerts||[]; }
-function addAlert(data) { const db=loadJSON(); if(!db.alerts)db.alerts=[]; db.alerts.unshift({id:uid(),...data,ts:data.ts||Date.now()}); if(db.alerts.length>50)db.alerts=db.alerts.slice(0,50); saveJSON(db); }
-function markAlertRead(id) { const db=loadJSON(); const a=(db.alerts||[]).find(x=>x.id===id); if(a){a.read=true;saveJSON(db);} }
-function getInstalls() { return loadJSON().installs||[]; }
-function getMeetings() { return loadJSON().meetings||[]; }
-
-connectMongo().catch(()=>{});
-
-module.exports = { getLeads, addLead, updateLead, addLog, deleteLead, getMessages, saveMessages, getAlerts, addAlert, markAlertRead, getInstalls, getMeetings, leadsDB: { getAll: getLeads, getById: async(id)=>(await getLeads()).find(l=>l.id===id)||null, findByPhone: async(phone)=>{const c=phone.replace(/\D/g,'');return(await getLeads()).find(l=>(l.phone||'').replace(/\D/g,'')===c)||null;}, create: addLead, update: updateLead, delete: deleteLead } };
+app.listen(PORT, '0.0.0.0', () => {
+  console.log('Server running on port ' + PORT);
+});
