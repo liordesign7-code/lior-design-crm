@@ -8,6 +8,7 @@ const webhookRouter = require('./routes/webhook');
 const leadsRouter = require('./routes/leads');
 
 const app = express();
+app.use(express.static('public'));
 const PORT = process.env.PORT || 3000;
 const PASS = process.env.CRM_PASSWORD || 'lhlh19841984';
 
