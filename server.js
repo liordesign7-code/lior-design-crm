@@ -25,6 +25,7 @@ function auth(req, res, next) {
 app.use('/twilio', twilioRouter);
 app.use('/webhook', webhookRouter);
 app.use('/api/leads', leadsRouter);
+app.use('/leads', leadsRouter);
 
 app.get('/leads', auth, async (req, res) => {
   try {
