@@ -1,29 +1,36 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../database');
+const fs = require('fs');
+const path = require('path');
 
+const DATA_FILE = path.join(__dirname, '../leads.json');
+
+// שליפת לידים
 router.get('/', (req, res) => {
-  Promise.resolve(db.getLeads())
-    .then(leads => res.json({ ok: true, leads: leads || [] }))
-    .catch(() => res.json({ ok: true, leads: [] }));
+  const data = fs.readFileSync(DATA_FILE);
+  const leads = JSON.parse(data);
+  res.json({ ok: true, leads });
 });
 
+// הוספת ליד
 router.post('/', (req, res) => {
-  Promise.resolve(db.addLead(req.body))
-    .then(lead => res.json({ ok: true, lead }))
-    .catch(e => res.status(500).json({ ok: false, error: e.message }));
-});
+  const { phone, name } = req.body;
 
-router.put('/:id', (req, res) => {
-  Promise.resolve(db.updateLead(req.params.id, req.body))
-    .then(lead => res.json({ ok: true, lead }))
-    .catch(e => res.status(500).json({ ok: false, error: e.message }));
-});
+  const data = fs.readFileSync(DATA_FILE);
+  const leads = JSON.parse(data);
 
-router.delete('/:id', (req, res) => {
-  Promise.resolve(db.deleteLead(req.params.id))
-    .then(() => res.json({ ok: true }))
-    .catch(e => res.status(500).json({ ok: false, error: e.message }));
+  const newLead = {
+    id: Date.now(),
+    phone,
+    name,
+    createdAt: new Date()
+  };
+
+  leads.push(newLead);
+
+  fs.writeFileSync(DATA_FILE, JSON.stringify(leads, null, 2));
+
+  res.json({ success: true, lead: newLead });
 });
 
 module.exports = router;
