@@ -5,33 +5,34 @@
 <title>CRM ליאור דיזיין</title>
 </head>
 
-<body style="font-family:Arial; text-align:center; padding:20px;">
+<body style="font-family:Arial; text-align:center; padding:40px;">
 
-<h1>🚀 מערכת CRM</h1>
+<h1>CRM מערכת</h1>
 
-<input type="text" id="name" placeholder="שם לקוח" style="padding:10px; margin:5px;">
+<input type="text" id="name" placeholder="שם" style="padding:10px; margin:5px;">
 <input type="text" id="phone" placeholder="טלפון" style="padding:10px; margin:5px;">
 
 <br><br>
 
-<button onclick="addLead()" 
-style="padding:10px 20px; background:#2563eb; color:white; border:none; border-radius:8px;">
+<button onclick="addLead()" style="padding:10px 20px;">
 הוסף ליד
 </button>
 
-<h2>לידים:</h2>
 <ul id="list"></ul>
 
 <script>
 function addLead() {
-  const name = document.getElementById('name').value;
-  const phone = document.getElementById('phone').value;
+const name = document.getElementById('name').value;
+const phone = document.getElementById('phone').value;
 
-  if (!name || !phone) return alert('תמלא פרטים');
+if (!name || !phone) {
+alert('תמלא פרטים');
+return;
+}
 
-  const li = document.createElement('li');
-  li.innerText = name + ' - ' + phone;
-  document.getElementById('list').appendChild(li);
+const li = document.createElement('li');
+li.innerText = name + ' - ' + phone;
+document.getElementById('list').appendChild(li);
 }
 </script>
 
