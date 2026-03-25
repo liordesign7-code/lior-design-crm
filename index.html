@@ -2,99 +2,15 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>CRM - ליאור דיזיין</title>
-  <style>
-    body {
-      font-family: Arial;
-      background: #f5f5f5;
-      margin: 0;
-      padding: 20px;
-      text-align: center;
-    }
-    h1 {
-      color: #333;
-    }
-    .box {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      max-width: 400px;
-      margin: auto;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-    input, button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-    button {
-      background: #2563eb;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #1d4ed8;
-    }
-    .lead {
-      background: #fff;
-      margin-top: 10px;
-      padding: 10px;
-      border-radius: 8px;
-      text-align: right;
-    }
-  </style>
+  <title>CRM</title>
 </head>
 <body>
 
-  <h1>🚀 CRM ליאור דיזיין</h1>
+<h1>ברוך הבא למערכת CRM 🚀</h1>
 
-  <div class="box">
-    <input type="text" id="name" placeholder="שם לקוח">
-    <input type="text" id="phone" placeholder="טלפון">
-    <button onclick="addLead()">הוסף ליד</button>
-  </div>
-
-  <div id="leads"></div>
-
-  <script>
-    let leads = JSON.parse(localStorage.getItem("leads")) || [];
-
-    function renderLeads() {
-      const container = document.getElementById("leads");
-      container.innerHTML = "";
-      leads.forEach((lead, index) => {
-        container.innerHTML += `
-          <div class="lead">
-            <strong>${lead.name}</strong><br>
-            ${lead.phone}
-          </div>
-        `;
-      });
-    }
-
-    function addLead() {
-      const name = document.getElementById("name").value;
-      const phone = document.getElementById("phone").value;
-
-      if (!name || !phone) {
-        alert("תמלא את כל השדות");
-        return;
-      }
-
-      leads.push({ name, phone });
-      localStorage.setItem("leads", JSON.stringify(leads));
-
-      document.getElementById("name").value = "";
-      document.getElementById("phone").value = "";
-
-      renderLeads();
-    }
-
-    renderLeads();
-  </script>
+<button onclick="location.href='crm.html'">
+כניסה למערכת
+</button>
 
 </body>
 </html>
