@@ -1,5 +1,39 @@
-<button 
-style="padding:15px 30px; font-size:18px; border:none; border-radius:10px; background:#2563eb; color:white;"
-onclick="window.location.href='/crm.html'">
-כניסה למערכת
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>CRM ליאור דיזיין</title>
+</head>
+
+<body style="font-family:Arial; text-align:center; padding:20px;">
+
+<h1>🚀 מערכת CRM</h1>
+
+<input type="text" id="name" placeholder="שם לקוח" style="padding:10px; margin:5px;">
+<input type="text" id="phone" placeholder="טלפון" style="padding:10px; margin:5px;">
+
+<br><br>
+
+<button onclick="addLead()" 
+style="padding:10px 20px; background:#2563eb; color:white; border:none; border-radius:8px;">
+הוסף ליד
 </button>
+
+<h2>לידים:</h2>
+<ul id="list"></ul>
+
+<script>
+function addLead() {
+  const name = document.getElementById('name').value;
+  const phone = document.getElementById('phone').value;
+
+  if (!name || !phone) return alert('תמלא פרטים');
+
+  const li = document.createElement('li');
+  li.innerText = name + ' - ' + phone;
+  document.getElementById('list').appendChild(li);
+}
+</script>
+
+</body>
+</html>
