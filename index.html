@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>CRM לידים</title>
+<style>
+body { font-family: Arial; background:#f5f5f5; text-align:center; padding:20px; }
+.card { background:#fff; padding:15px; margin:10px; border-radius:10px; }
+button { padding:10px 20px; background:#2563eb; color:#fff; border:none; border-radius:8px; }
+</style>
+</head>
+<body>
+
+<h1>🔥 מערכת לידים</h1>
+
+<button onclick="addLead()">➕ הוסף ליד</button>
+
+<div id="leads"></div>
+
+<script>
+let leads = [];
+
+function addLead(){
+  const lead = {
+    name: "לקוח חדש",
+    time: new Date().toLocaleString()
+  };
+  leads.push(lead);
+  render();
+}
+
+function render(){
+  const container = document.getElementById("leads");
+  container.innerHTML = "";
+
+  leads.forEach(l => {
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `<b>${l.name}</b><br>${l.time}`;
+    container.appendChild(div);
+  });
+}
+</script>
+
+</body>
+</html>
