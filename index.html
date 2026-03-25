@@ -3,37 +3,143 @@
 <head>
 <meta charset="UTF-8">
 <title>CRM ליאור דיזיין</title>
+
+<style>
+body {
+  font-family: Arial;
+  background: #f5f7fa;
+  margin: 0;
+}
+
+.header {
+  background: #2563eb;
+  color: white;
+  padding: 15px;
+  font-size: 20px;
+}
+
+.container {
+  padding: 15px;
+}
+
+.card {
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+input, select {
+  width: 100%;
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+button {
+  padding: 10px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  width: 100%;
+  margin-top: 5px;
+}
+
+.lead {
+  background: white;
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
+.status-new { border-right: 5px solid #3b82f6; }
+.status-progress { border-right: 5px solid #f59e0b; }
+.status-closed { border-right: 5px solid #10b981; }
+
+</style>
 </head>
 
-<body style="font-family:Arial; text-align:center; padding:40px;">
+<body>
 
-<h1>CRM מערכת</h1>
+<div class="header">
+CRM ליאור דיזיין
+</div>
 
-<input type="text" id="name" placeholder="שם" style="padding:10px; margin:5px;">
-<input type="text" id="phone" placeholder="טלפון" style="padding:10px; margin:5px;">
+<div class="container">
 
-<br><br>
+<div class="card">
+<h3>➕ ליד חדש</h3>
 
-<button onclick="addLead()" style="padding:10px 20px;">
-הוסף ליד
-</button>
+<input type="text" id="name" placeholder="שם לקוח">
+<input type="text" id="phone" placeholder="טלפון">
 
-<ul id="list"></ul>
+<select id="status">
+<option value="new">חדש</option>
+<option value="progress">בטיפול</option>
+<option value="closed">סגור</option>
+</select>
+
+<button onclick="addLead()">שמור ליד</button>
+</div>
+
+<div id="leads"></div>
+
+</div>
 
 <script>
+let leads = JSON.parse(localStorage.getItem("leads")) || [];
+
+function render() {
+  const container = document.getElementById("leads");
+  container.innerHTML = "";
+
+  leads.forEach((lead, i) => {
+    container.innerHTML += `
+      <div class="lead status-${lead.status}">
+        <b>${lead.name}</b><br>
+        ${lead.phone}<br>
+        סטטוס: ${lead.status}
+        <br><br>
+        <button onclick="sendWhatsApp('${lead.phone}')">וואטסאפ</button>
+        <button onclick="deleteLead(${i})">מחק</button>
+      </div>
+    `;
+  });
+}
+
 function addLead() {
-const name = document.getElementById('name').value;
-const phone = document.getElementById('phone').value;
+  const name = document.getElementById("name").value;
+  const phone = document.getElementById("phone").value;
+  const status = document.getElementById("status").value;
 
-if (!name || !phone) {
-alert('תמלא פרטים');
-return;
+  if (!name || !phone) {
+    alert("תמלא פרטים");
+    return;
+  }
+
+  leads.push({ name, phone, status });
+  localStorage.setItem("leads", JSON.stringify(leads));
+
+  document.getElementById("name").value = "";
+  document.getElementById("phone").value = "";
+
+  render();
 }
 
-const li = document.createElement('li');
-li.innerText = name + ' - ' + phone;
-document.getElementById('list').appendChild(li);
+function deleteLead(index) {
+  leads.splice(index, 1);
+  localStorage.setItem("leads", JSON.stringify(leads));
+  render();
 }
+
+function sendWhatsApp(phone) {
+  window.open(`https://wa.me/972${phone}`, '_blank');
+}
+
+render();
 </script>
 
 </body>
