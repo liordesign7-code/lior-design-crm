@@ -3679,6 +3679,20 @@ window.CRM = {
     return {ok:true,id:l.id};
   }
 };
+  function sendLeadToServer(lead) {
+  fetch('https://lior-design-crm-api.onrender.com/api/leads', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      name: lead.name || '',
+      phone: lead.phone || '',
+      note: lead.note || ''
+    })
+  });
+  }
+
 </script>
 </body>
 </html>
