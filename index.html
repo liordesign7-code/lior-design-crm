@@ -1,1 +1,120 @@
 
+  const sel=document.getElementById('de-prod-'+id);
+  const val=inp.value.trim();
+  if(!val)return;
+  // Add as new option and select it
+  const opt=document.createElement('option');
+  opt.value=val; opt.textContent=val; opt.selected=true;
+  sel.appendChild(opt);
+  sel.value=val;
+  inp.value='';
+  toast('מוצר נוסף ✓');
+}
+function saveDetEdit(id){
+  const l=DB.leads.find(x=>x.id===id); if(!l)return;
+  const name=document.getElementById('de-name-'+id)?.value.trim()||l.name;
+  const phone=document.getElementById('de-phone-'+id)?.value.trim()||l.phone;
+  const city=document.getElementById('de-city-'+id)?.value.trim();
+  const price=document.getElementById('de-price-'+id)?.value.trim();
+  const prod=document.getElementById('de-prod-'+id)?.value||l.product;
+  const heat=document.getElementById('de-heat-'+id)?.value;
+  const notes=document.getElementById('de-notes-'+id)?.value.trim();
+  const referral=document.getElementById('de-ref-'+id)?.value.trim();
+  const prev=l.product;
+  Object.assign(l,{name,phone,city,price,product:prod||l.product,heat,notes,referral});
+  if(prev!==prod&&prod) addLog(l,'מוצר עודכן: '+prod);
+  addLog(l,'פרטים עודכנו');
+  save();
+  toast('נשמר ✓');
+  openDet(id); // re-render
+}
+
+function editCkItem(i, lid){
+  const tasks = DB.cfg.checklist || DFLT.checklist;
+  const cur = tasks[i];
+  const lbl = document.getElementById('ck-lbl-'+lid+'-'+i);
+  if(!lbl) return;
+  // Replace label with inline input
+  lbl.innerHTML=`<input type="text" value="${cur}" 
+    style="width:100%;border:1.5px solid var(--b);border-radius:5px;padding:4px 8px;font-size:13px;font-weight:600;outline:none"
+    onblur="saveCkItem(${i},'${lid}',this.value)"
+    onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){openDet('${lid}')}"
+    onclick="event.stopPropagation()">`;
+  lbl.querySelector('input').focus();
+}
+function saveCkItem(i, lid, val){
+  if(!val.trim()) return;
+  if(!DB.cfg.checklist) DB.cfg.checklist=[...DFLT.checklist];
+  DB.cfg.checklist[i] = val.trim();
+  save(); openDet(lid);
+}
+function delCkItem(i, lid){
+  if(!DB.cfg.checklist) DB.cfg.checklist=[...DFLT.checklist];
+  DB.cfg.checklist.splice(i,1);
+  save(); openDet(lid); toast('שלב נמחק','warn');
+}
+function addCkItemInCard(lid){
+  const v = prompt('שם השלב החדש:');
+  if(!v) return;
+  if(!DB.cfg.checklist) DB.cfg.checklist=[...DFLT.checklist];
+  DB.cfg.checklist.push(v.trim());
+  save(); openDet(lid); toast('שלב נוסף ✓');
+}
+
+// ═══════════════════════════════════════════════
+// DASHBOARD CLOCK
+// ═══════════════════════════════════════════════
+const HE_DAYS=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+const HE_MONTHS=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+function tickClock(){
+  const now=new Date();
+  const dayEl=document.getElementById('dc-day');
+  const dateEl=document.getElementById('dc-date');
+  const timeEl=document.getElementById('dc-time');
+  if(!dayEl)return;
+  const hh=String(now.getHours()).padStart(2,'0');
+  const mm=String(now.getMinutes()).padStart(2,'0');
+  dayEl.textContent='יום '+HE_DAYS[now.getDay()];
+  dateEl.textContent=now.getDate()+' ב'+HE_MONTHS[now.getMonth()]+' '+now.getFullYear();
+  timeEl.textContent=hh+':'+mm;
+}
+tickClock();
+setInterval(tickClock,1000);
+
+// ═══════════════════════════════════════════════
+// WEBHOOK HELPER (for future server integration)
+// ═══════════════════════════════════════════════
+// Can be called externally: window.CRM.addLead({name,phone,source,...})
+window.CRM = {
+  addLead(data){
+    if(data.phone){
+      const dup=DB.leads.find(l=>l.phone&&l.phone.replace(/\D/g,'')===(data.phone.replace(/\D/g,'')));
+      if(dup){ addLog(dup,'פנייה נוספת: '+(data.notes||'')); save(); return {ok:true,duplicate:true,id:dup.id}; }
+    }
+    const l={id:uid(),name:data.name||data.phone||'ליד חדש',phone:data.phone||'',email:data.email||'',city:data.city||'',address:'',product:data.product||'',source:data.source||'אחר',status:'new',price:0,notes:data.notes||data.message||'',tasks:{},history:[{action:'ליד נוצר אוטומטית – '+data.source,ts:Date.now()}],createdAt:Date.now(),closedAt:null};
+    DB.leads.unshift(l);
+sendLeadToServer(l);
+save();
+updateBadges();
+renderPage(curNav);
+    toast('ליד חדש: '+l.name,'info');
+    return {ok:true,id:l.id};
+  }
+};
+  function sendLeadToServer(lead) {
+  fetch('https://lior-design-crm-api.onrender.com/api/leads', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      name: lead.name || '',
+      phone: lead.phone || '',
+      note: lead.note || ''
+    })
+  });
+  }
+
+</script>
+</body>
+</html>
