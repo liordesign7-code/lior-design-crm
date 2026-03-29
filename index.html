@@ -1,84 +1,43 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lior Design CRM</title>
-
-<style>
-body {
-  font-family: Arial;
-  background: #f5f5f5;
-  margin: 0;
-  padding: 20px;
-  direction: rtl;
-}
-
-h1 {
-  text-align: center;
-}
-
-.card {
-  background: #fff;
-  padding: 15px;
-  margin-bottom: 10px;
-  border-radius: 10px;
-}
-
-input, button {
-  padding: 10px;
-  margin: 5px;
-}
-
-button {
-  background: #2563eb;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-}
-
-</style>
+  <meta charset="UTF-8">
+  <title>CRM לידים</title>
 </head>
-
 <body>
 
 <h1>CRM לידים</h1>
 
-<div class="card">
-  <input id="name" placeholder="שם">
-  <input id="phone" placeholder="טלפון">
-  <button onclick="addLead()">שמור</button>
-</div>
+<input id="name" placeholder="שם">
+<input id="phone" placeholder="טלפון">
+<button onclick="saveLead()">שמור</button>
 
-<div id="list"></div>
+<ul id="list"></ul>
 
 <script>
-let leads = JSON.parse(localStorage.getItem("leads") || "[]");
+let leads = JSON.parse(localStorage.getItem("leads")) || [];
+
+function saveLead() {
+  const name = document.getElementById("name").value;
+  const phone = document.getElementById("phone").value;
+
+  if (!name || !phone) return;
+
+  leads.unshift({ name, phone });
+  localStorage.setItem("leads", JSON.stringify(leads));
+
+  render();
+}
 
 function render() {
   const list = document.getElementById("list");
   list.innerHTML = "";
 
-  leads.forEach((l, i) => {
-    list.innerHTML += `
-      <div class="card">
-        ${l.name} - ${l.phone}
-      </div>
-    `;
+  leads.forEach(l => {
+    const li = document.createElement("li");
+    li.innerText = l.name + " - " + l.phone;
+    list.appendChild(li);
   });
-}
-
-function addLead() {
-  const name = document.getElementById("name").value;
-  const phone = document.getElementById("phone").value;
-
-  if (!phone) return;
-
-  leads.unshift({ name, phone });
-
-  localStorage.setItem("leads", JSON.stringify(leads));
-
-  render();
 }
 
 render();
