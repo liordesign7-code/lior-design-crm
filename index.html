@@ -3,16 +3,59 @@
 <head>
   <meta charset="UTF-8">
   <title>CRM לידים</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #f3f3f3;
+      text-align: center;
+      padding: 40px;
+    }
+
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      width: 300px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+    }
+
+    button {
+      background: #2d6cdf;
+      color: white;
+      padding: 10px;
+      border: none;
+      width: 100%;
+      cursor: pointer;
+      border-radius: 8px;
+    }
+
+    li {
+      text-align: right;
+      margin-top: 5px;
+    }
+  </style>
 </head>
+
 <body>
 
-<h1>CRM לידים</h1>
+<div class="container">
+  <h1>CRM לידים</h1>
 
-<input id="name" placeholder="שם">
-<input id="phone" placeholder="טלפון">
-<button onclick="saveLead()">שמור</button>
+  <input id="name" placeholder="שם">
+  <input id="phone" placeholder="טלפון">
 
-<ul id="list"></ul>
+  <button onclick="saveLead()">שמור</button>
+
+  <ul id="list"></ul>
+</div>
 
 <script>
 let leads = JSON.parse(localStorage.getItem("leads")) || [];
